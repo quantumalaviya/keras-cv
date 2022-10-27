@@ -54,6 +54,7 @@ def DarknetConvBlock(
             strides,
             padding="same",
             use_bias=use_bias,
+            kernel_initializer = keras.initializers.random_normal(stddev=0.02)
         ),
         layers.BatchNormalization(),
     ]
@@ -204,7 +205,7 @@ def DarknetConvBlockDepthwise(
         name = f"conv_block{backend.get_uid('conv_block')}"
 
     model_layers = [
-        layers.DepthwiseConv2D(kernel_size, strides, padding="same", use_bias=False),
+        layers.DepthwiseConv2D(kernel_size, strides, padding="same", use_bias=False, kernel_initializer = keras.initializers.random_normal(stddev=0.02)),
         layers.BatchNormalization(),
     ]
 
