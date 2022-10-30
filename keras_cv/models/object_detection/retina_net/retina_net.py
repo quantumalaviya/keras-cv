@@ -79,7 +79,7 @@ class RetinaNet(tf.keras.Model):
             network (FPN).  The feature pyramid network is called on the outputs of the
             `backbone`.  The KerasCV default backbones return three outputs in a list,
             but custom backbones may be written and used with custom feature pyramid
-            networks.  If not provided, a default feature pyramid neetwork is produced
+            networks.  If not provided, a default feature pyramid network is produced
             by the library.  The default feature pyramid network is compatible with all
             standard keras_cv backbones.
         classification_head: (Optional) A `keras.Layer` that performs classification of
