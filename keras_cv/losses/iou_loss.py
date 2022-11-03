@@ -104,6 +104,9 @@ class IoULoss(tf.keras.losses.Loss):
         iou = tf.linalg.diag_part(iou)
         iou = tf.reduce_mean(iou, axis=self.axis)
 
+        if self.axis is not None:
+            iou = tf.reduce_mean(iou, axis=self.axis)
+
         if self.mode == "linear":
             loss = 1 - iou
         elif self.mode == "quadratic":
