@@ -109,10 +109,7 @@ class IoULoss(tf.keras.losses.Loss):
         iou = bounding_box.compute_iou(y_true, y_pred, self.bounding_box_format)
         # pick out the diagonal for corresponding ious
         iou = tf.linalg.diag_part(iou)
-        # iou = tf.reduce_mean(iou, axis=self.axis)
-
-        if self.axis is not None:
-            iou = tf.reduce_mean(iou, axis=self.axis)
+        iou = tf.reduce_mean(iou, axis=self.axis)
 
         if self.mode == "linear":
             loss = 1 - iou
