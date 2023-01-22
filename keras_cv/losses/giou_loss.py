@@ -156,7 +156,9 @@ class GIoULoss(tf.keras.losses.Loss):
 
         giou = self._compute_giou(y_true, y_pred)
         giou = tf.linalg.diag_part(giou)
-        giou = tf.reduce_mean(giou, axis=self.axis)
+
+        if self.axis != "no_reduction":
+            giou = tf.reduce_mean(giou, axis=self.axis)
 
         return 1 - giou
 

@@ -19,6 +19,9 @@ import tensorflow.keras.backend as K
 import keras_cv
 from keras_cv import bounding_box
 from keras_cv.models.object_detection import predict_utils
+from keras_cv.models.object_detection.yolox.__internal__.binary_crossentropy import (
+    BinaryCrossentropy,
+)
 from keras_cv.models.object_detection.yolox.__internal__.layers.yolox_decoder import (
     DecodePredictions,
 )
@@ -414,12 +417,17 @@ class YoloX(tf.keras.Model):
             num_fg_img, cls_target, reg_target, obj_target, fg_mask = tf.cond(
                 tf.equal(num_gt, 0), return_empty_boxes, perform_label_assignment
             )
+
             loss_iou_this_image = self.box_loss(
                 reg_target, tf.boolean_mask(bboxes_preds_per_image, fg_mask)
             )
             loss_obj_this_image = self.objectness_loss(obj_target, obj_preds_per_image)
             loss_cls_this_image = self.classification_loss(
                 cls_target, tf.boolean_mask(cls_preds_per_image, fg_mask)
+            )
+            
+            tf.debugging.assert_equal(
+                tf.math.is_nan(loss_iou_this_image), False, message=f"{loss_iou_this_image}",
             )
 
             # TODO: add assertions to ensure loss output shapes aren't wrong
@@ -435,11 +443,15 @@ class YoloX(tf.keras.Model):
             [0, num_fg, loss_iou, loss_obj, loss_cls],
         )
 
+        tf.debugging.assert_equal(
+            tf.math.is_nan(loss_iou), False, message=f"{loss_iou}",
+        )
+
+        num_fg = tf.cast(tf.maximum(num_fg, 1), tf.float32)
         self.classification_loss_metric.update_state(loss_cls / num_fg)
         self.box_loss_metric.update_state(loss_iou / num_fg)
         self.objectness_loss_metric.update_state(loss_obj / num_fg)
 
-        num_fg = tf.cast(tf.maximum(num_fg, 1), tf.float32)
         reg_weight = 5.0
         loss = reg_weight * loss_iou + loss_obj + loss_cls
 
@@ -715,11 +727,11 @@ def _parse_box_loss(loss):
     # case insensitive comparison
     if loss.lower() == "iou":
         return keras_cv.losses.IoULoss(
-            bounding_box_format="center_xywh", mode="quadratic", reduction="none"
+            bounding_box_format="center_xywh", mode="quadratic", reduction="none", axis="no_reduction",
         )
     if loss.lower() == "giou":
         return keras_cv.losses.GIoULoss(
-            bounding_box_format="center_xywh", reduction="none"
+            bounding_box_format="center_xywh", reduction="none", axis="no_reduction",
         )
 
     raise ValueError(
@@ -735,7 +747,7 @@ def _parse_classification_loss(loss):
 
     # case insensitive comparison
     if loss.lower() == "binary_crossentropy":
-        return tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction="none")
+        return BinaryCrossentropy(from_logits=True, reduction="none")
 
     raise ValueError(
         "Expected `classification_loss` to be either a Keras Loss, "
@@ -750,7 +762,7 @@ def _parse_objectness_loss(loss):
 
     # case insensitive comparison
     if loss.lower() == "binary_crossentropy":
-        return tf.keras.losses.BinaryCrossentropy(from_logits=True, reduction="none")
+        return BinaryCrossentropy(from_logits=True, reduction="none")
 
     raise ValueError(
         "Expected `objectness_loss` to be either a Keras Loss, "
